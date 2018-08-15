@@ -1,0 +1,29 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "26.0.2"
+
+    defaultConfig {
+        applicationId "org.xiangbalao.androidshell"
+        minSdkVersion 8
+        targetSdkVersion 19
+
+        testApplicationId "org.xiangbalao.shell"
+        testInstrumentationRunner "android.test.InstrumentationTestRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles 'proguard-project.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:19.+'
+    compile 'com.google.code.gson:gson:2.2.1'
+    androidTestCompile 'com.android.support:support-v4:19.+'
+    androidTestCompile 'com.google.code.gson:gson:2.2.1'
+}
