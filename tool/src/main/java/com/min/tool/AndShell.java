@@ -13,18 +13,20 @@ import java.security.NoSuchAlgorithmException;
 import java.util.zip.Adler32;
 
 public class AndShell {
+
+    private static final String dir = "/home/minych/project/android/JiaGuSample/tool/src/main/apks/";
     /**
      * 需要加壳的程序
      */
-    private static String apkPath = "g:/AndroidShellDome.apk";
+    private static String apkPath = dir + "source-apk-debug.apk";
     /**
-     * 解壳dex
+     * 壳dex
      */
-    private static String shellDexPath = "g:/unshell.dex";
+    private static String shellDexPath = dir + "shell.dex";
     /**
      * 加壳后的dex
      */
-    private static String newDexFile = "g:/classes.dex";
+    private static String newDexFile = dir + "classes.dex";
 
     public static void main(String[] args) {
 

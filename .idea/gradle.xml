@@ -8,9 +8,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/androidShell" />
-            <option value="$PROJECT_DIR$/androidShellDome" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/shell-apk" />
+            <option value="$PROJECT_DIR$/source-apk" />
             <option value="$PROJECT_DIR$/tool" />
           </set>
         </option>
