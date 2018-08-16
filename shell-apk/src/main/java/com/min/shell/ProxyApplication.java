@@ -1,5 +1,6 @@
 package com.min.shell;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.Context;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,60 +36,57 @@ public class ProxyApplication extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         try {
-            // 创建两个文件夹payload_odex，payload_lib 私有的，可写的文件目录
             File odex = this.getDir("payload_odex", MODE_PRIVATE);
             File libs = this.getDir("payload_lib", MODE_PRIVATE);
             odexPath = odex.getAbsolutePath();
             libPath = libs.getAbsolutePath();
             apkFileName = odex.getAbsolutePath() + "/AndroidShellDome.apk";
+
+            //用本地apk测试解壳过程
+//            copyAssetsToDst(this, "source-apk-debug.apk", apkFileName);
+
             File dexFile = new File(apkFileName);
             if (!dexFile.exists()) {
-                dexFile.createNewFile(); // 在payload_odex文件夹内，创建payload.apk
-                // 读取程序classes.dex文件
+                dexFile.createNewFile();
                 byte[] dexdata = this.readDexFileFromApk();
-                // 分离出解壳后的apk文件已用于动态加载
                 this.splitPayLoadFromDex(dexdata);
             }
-            // 配置动态加载环境
             Object currentActivityThread = RefInvoke.invokeStaticMethod(
                     "android.app.ActivityThread", "currentActivityThread",
-                    new Class[]{}, new Object[]{});// 获取主线程对象
-            // http://blog.csdn.net/myarrow/article/details/14223493
-            String packageName = this.getPackageName();// 当前apk的包名
-            // 下面两句不是太理解
-            WeakReference wr;
+                    new Class[]{}, new Object[]{});
+
+            String packageName = this.getPackageName();
+
+            Object loadApk = null;
             if (Build.VERSION.SDK_INT < 19) {
                 HashMap mPackages = (HashMap) RefInvoke.getFieldOjbect(
                         "android.app.ActivityThread", currentActivityThread,
                         "mPackages");
-                wr = (WeakReference) mPackages.get(packageName);
+                WeakReference wr = (WeakReference) mPackages.get(packageName);
+                loadApk = wr.get();
             } else {
                 ArrayMap mPackages = (ArrayMap) RefInvoke.getFieldOjbect(
                         "android.app.ActivityThread", currentActivityThread,
                         "mPackages");
-                wr = (WeakReference) mPackages.get(packageName);
-
+                WeakReference wr = (WeakReference) mPackages.get(packageName);
+                loadApk = wr.get();
             }
-            // 创建被加壳apk的DexClassLoader对象 加载apk内的类和本地代码（c/c++代码）
+
             DexClassLoader dLoader = new DexClassLoader(apkFileName, odexPath,
-                    libPath, (ClassLoader) RefInvoke.getFieldOjbect(
-                    "android.app.LoadedApk", wr.get(), "mClassLoader"));
-            // base.getClassLoader(); 是不是就等同于 (ClassLoader)
-            // RefInvoke.getFieldOjbect()? 有空验证下//?
-            // 把当前进程的DexClassLoader 设置成了被加壳apk的DexClassLoader
-            // ----有点c++中进程环境的意思~~
-            RefInvoke.setFieldOjbect("android.app.LoadedApk", "mClassLoader",
-                    wr.get(), dLoader);
+                    libPath, base.getClassLoader());
+
+            RefInvoke.setFieldOjbect("android.app.LoadedApk", "mClassLoader", loadApk, dLoader);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onCreate() {
         // 如果源应用配置有Appliction对象，则替换为源应用Applicaiton，以便不影响源程序逻辑。
-        String appClassName = "com.min.source.DemoApplication";
+        String appClassName = "com.min.source.App";
         // 有值的话调用该Applicaiton
         Object currentActivityThread = RefInvoke.invokeStaticMethod(
                 "android.app.ActivityThread", "currentActivityThread",
@@ -152,12 +151,6 @@ public class ProxyApplication extends Application {
         app.onCreate();
     }
 
-    /**
-     * 释放被加壳的apk文件，so文件
-     *
-     * @param data
-     * @throws IOException
-     */
     private void splitPayLoadFromDex(byte[] data) throws IOException {
         byte[] apkdata = data;
         int ablen = apkdata.length;
@@ -216,12 +209,6 @@ public class ProxyApplication extends Application {
 
     }
 
-    /**
-     * 从apk包里面获取dex文件内容（byte）
-     *
-     * @return
-     * @throws IOException
-     */
     private byte[] readDexFileFromApk() throws IOException {
         ByteArrayOutputStream dexByteArrayOutputStream = new ByteArrayOutputStream();
         ZipInputStream localZipInputStream = new ZipInputStream(
@@ -248,12 +235,42 @@ public class ProxyApplication extends Application {
         return dexByteArrayOutputStream.toByteArray();
     }
 
-    // //直接返回数据，读者可以添加自己解密方法
     private byte[] decrypt(byte[] data) {
         // 模似解密数据
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) (data[i] ^ 3);
         }
         return data;
+    }
+
+    private void copyAssetsToDst(Context context, String srcPath, String dstPath) {
+        try {
+            String fileNames[] = context.getAssets().list(srcPath);
+            if (fileNames.length > 0) {
+                File file = new File(dstPath);
+                if (!file.exists()) file.mkdirs();
+                for (String fileName : fileNames) {
+                    if (!srcPath.equals("")) { // assets 文件夹下的目录
+                        copyAssetsToDst(context, srcPath + File.separator + fileName, dstPath + File.separator + fileName);
+                    } else { // assets 文件夹
+                        copyAssetsToDst(context, fileName, dstPath + File.separator + fileName);
+                    }
+                }
+            } else {
+                File outFile = new File(dstPath);
+                InputStream is = context.getAssets().open(srcPath);
+                FileOutputStream fos = new FileOutputStream(outFile);
+                byte[] buffer = new byte[1024];
+                int byteCount;
+                while ((byteCount = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, byteCount);
+                }
+                fos.flush();
+                is.close();
+                fos.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

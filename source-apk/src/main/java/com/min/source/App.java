@@ -1,13 +1,14 @@
 package com.min.source;
 
 import android.app.Application;
-import android.util.Log;
 
-public class DemoApplication extends Application {
+import com.min.source.util.L;
+
+public class App extends Application {
 
     private static Application context;
 
-    public DemoApplication() {
+    public App() {
         super();
         context = this;
     }
@@ -15,7 +16,13 @@ public class DemoApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i("SourceApk", "Application onCreate");
+        L.d("App onCreate");
+    }
+
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        L.d("App onTerminate");
     }
 
     public static Application getApplication() {
