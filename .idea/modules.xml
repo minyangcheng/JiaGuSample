@@ -4,9 +4,11 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/JiaGuSample.iml" filepath="$PROJECT_DIR$/JiaGuSample.iml" />
       <module fileurl="file://$PROJECT_DIR$/tool/Tool.iml" filepath="$PROJECT_DIR$/tool/Tool.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/shell-apk/androidShell.iml" filepath="$PROJECT_DIR$/shell-apk/androidShell.iml" />
       <module fileurl="file://$PROJECT_DIR$/source-apk/androidShellDome.iml" filepath="$PROJECT_DIR$/source-apk/androidShellDome.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/shell-apk/shell-apk.iml" filepath="$PROJECT_DIR$/shell-apk/shell-apk.iml" />
+      <module fileurl="file://$PROJECT_DIR$/source-apk/source-apk.iml" filepath="$PROJECT_DIR$/source-apk/source-apk.iml" />
       <module fileurl="file://$PROJECT_DIR$/tool/tool.iml" filepath="$PROJECT_DIR$/tool/tool.iml" />
     </modules>
   </component>

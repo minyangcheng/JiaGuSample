@@ -1,3 +1,1 @@
-include ':app', ':tool'
-include ':shell-apk'
-include ':source-apk'
+include ':app', ':tool' ,':shell-apk',':source-apk'
