@@ -5,10 +5,6 @@ import android.content.SharedPreferences;
 
 import com.min.dump.Constants;
 
-/**
- * Created by minych on 18-9-4.
- */
-
 public class Utils {
 
     public static boolean putString(Context context, String key, String value) {
