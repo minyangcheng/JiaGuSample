@@ -29,22 +29,22 @@ public class ReCompileCode {
             File[] dexFileArr = dexDirFile.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    return file.getName().endsWith(".dex");
+                    return file.getName().endsWith(".dex") || file.getName().endsWith(".apk");
                 }
             });
             Process process = null;
             String s = null;
+            System.out.println("......开始解析......");
             for (File dexFile : dexFileArr) {
                 String cmd = "jadx -d " + distDirFile.getAbsolutePath() + " " + dexFile.getAbsolutePath();
                 process = Runtime.getRuntime().exec(cmd);
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 while ((s = bufferedReader.readLine()) != null) {
-//                    System.out.println(s);
                 }
                 process.waitFor();
                 System.out.println(dexFile.getAbsolutePath() + "...解析完成... code=" + process.exitValue());
             }
-            System.out.println("所有文件解析完成....");
+            System.out.println("......解析结束......");
         } catch (Exception e) {
             e.printStackTrace();
         }
