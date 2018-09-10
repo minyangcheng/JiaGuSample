@@ -4,7 +4,7 @@
 
 ### 步骤一：脱壳
 
-脱壳简单来讲其实就是获取app dex文件，我这里主要介绍下以下两个方法
+脱壳简单来讲其实就是获取app dex文件，我这里介绍下以下两个简便的方法，基本上能成功脱壳市场上80%的应用，这次公司业务需要破解的应用，用方法二都能成功脱壳。当然你也可以用ZjDroid、DexHunter等工具。
 
 #### 脱壳方法一
 
@@ -21,13 +21,15 @@
 
 1. 一个root过的手机，系统要求在4.4到6.0之间
 2. 安装xposed：该工具的原理是修改系统文件，替换了/system/bin/app_process可执行文件，在启动Zygote时加载额外的jar文件（/data/data/de.robv.android.xposed.installer/bin/XposedBridge.jar），并执行一些初始化操作(执行XposedBridge的main方法)。然后我们就可以在这个Zygote上下文中进行某些hook操作。
-3. 安装dumpdex：自己写的一个可以脱壳的app，在xposed开启该模块
+3. 安装dumpdex：自己写的一个可以脱壳的app，实际上是一个xposed模块
 4. 安装需要脱壳的app
 5. 重启手机，启动app
 
 ### 步骤二：从dex文件和apk文件中获取app代码和资源
 
-将脱壳后的dex和源app放在一个统一目录下，运行以下脚本，获取app源码和资源。该脚本其实是调用*jadx工具*来实现反编译，然后用*Intellij*打开生成的dist目录，将sources标记为sources root，将resources标记为resources root
+将脱壳后的dex和源app放在一个统一目录下，运行以下脚本，获取app源码和资源。
+
+该脚本其实是调用*jadx工具*来实现反编译，然后用*Intellij*打开生成的dist目录，将sources标记为sources root，将resources标记为resources root，即可开始分析应用的代码。当然你也可以用Source Insight等工具进行源码分析。
 
 ```
 public class ReCompileCode {
@@ -78,8 +80,9 @@ public class ReCompileCode {
 
 如果你是为了爬取app的数据，就去针对app的网络请求层进行分析，通过分析得出这个app的请求网络传输参数和加密逻辑，然后你可以通过xposed在关键方法上设置一个切面，甚至你可以直接将app的网络加解密代码提取出来，通过接口请求去爬去数据。
 如果你是为了用app的某个收费功能，就去该功能页面的入口处，寻找判断该收费能否使用的代码，然后通过xposed直接hook掉判断逻辑即可。
-这里推荐一个动态分析工具Inspeckage，它是一个基于Xposed开发的一款应用，核心功能有监控Shared Preferences数、加密、哈希、SQLite、HTTP、WebView数据，还能动态添加新钩子
+这里推荐一个动态分析工具Inspeckage，它是一个基于Xposed开发的一款应用，核心功能有监控Shared Preferences数、加密、哈希、SQLite、HTTP、WebView数据，还能动态添加新钩子。
 
+//todo
 
 ## 了解app加固
 
@@ -92,8 +95,6 @@ public class ReCompileCode {
 | .... | .... |
 
 ### 类加载机制
-
-### apk打包机制
 
 #### dex文件格式
 

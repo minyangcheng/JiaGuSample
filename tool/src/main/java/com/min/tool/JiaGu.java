@@ -12,7 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.Adler32;
 
-public class AndShell {
+public class JiaGu {
 
     private static final String dir = "/home/minych/project/android/JiaGuSample/tool/src/main/apks/";
     /**
@@ -34,43 +34,41 @@ public class AndShell {
         //checkArgs(args);
 
         try {
-            File payloadSrcFile = new File(apkPath);
-            File unShellDexFile = new File(shellDexPath);
-            if (!payloadSrcFile.exists()) {
+            File apkFile = new File(apkPath);
+            File shellDexFile = new File(shellDexPath);
+            if (!apkFile.exists()) {
                 System.out.println("APK不存在");
                 return;
             }
-
-            if (!unShellDexFile.exists()) {
+            if (!shellDexFile.exists()) {
                 System.out.println("加壳程序的dex不存在");
                 return;
             }
 
-            byte[] payloadArray = encrpt(readFileBytes(payloadSrcFile));// 以二进制形式读出apk，并进行加密处理
+            byte[] apkByteArray = encrpt(readFileBytes(apkFile));
+            System.out.println("APK的长度：" + apkByteArray.length);
 
-            System.out.println("APK的长度：" + payloadArray.length);
+            byte[] shellDexArray = readFileBytes(shellDexFile);
+            System.out.println("Dex的长度：" + shellDexArray.length);
 
-            byte[] unShellDexArray = readFileBytes(unShellDexFile);// 以二进制形式读出dex
-
-            System.out.println("Dex的长度：" + unShellDexArray.length);
-            int payloadLen = payloadArray.length;
-            int unShellDexLen = unShellDexArray.length;
-            int totalLen = payloadLen + unShellDexLen + 4;// 多出4字节是存放长度的。
-            byte[] newdex = new byte[totalLen]; // 申请了新的长度
-            System.out.println("加壳后Dex的长度" + newdex.length);
+            int apkByteArrayLen = apkByteArray.length;
+            int shellDexLen = shellDexArray.length;
+            int totalLen = apkByteArrayLen + shellDexLen + 4;
+            byte[] newDex = new byte[totalLen];
+            System.out.println("加壳后Dex的长度" + newDex.length);
 
             // 添加解壳代码
-            System.arraycopy(unShellDexArray, 0, newdex, 0, unShellDexLen);// 先拷贝dex内容
+            System.arraycopy(shellDexArray, 0, newDex, 0, shellDexLen);// 先拷贝dex内容
             // 添加加密后的解壳数据
-            System.arraycopy(payloadArray, 0, newdex, unShellDexLen, payloadLen);// 再在dex内容后面拷贝apk的内容
+            System.arraycopy(apkByteArray, 0, newDex, shellDexLen, apkByteArrayLen);// 再在dex内容后面拷贝apk的内容
             // 添加解壳数据长度
-            System.arraycopy(intToByte(payloadLen), 0, newdex, totalLen - 4, 4);// 最后4为长度
+            System.arraycopy(intToByte(apkByteArrayLen), 0, newDex, totalLen - 4, 4);// 最后4为长度
             // 修改DEX file size文件头
-            fixFileSizeHeader(newdex);
+            fixFileSizeHeader(newDex);
             // 修改DEX SHA1 文件头
-            fixSHA1Header(newdex);
+            fixSHA1Header(newDex);
             // 修改DEX CheckSum文件头
-            fixCheckSumHeader(newdex);
+            fixCheckSumHeader(newDex);
             // 把内容写到 newDexFile
             File file = new File(newDexFile);
             if (!file.exists()) {
@@ -79,7 +77,7 @@ public class AndShell {
 
             FileOutputStream localFileOutputStream = new FileOutputStream(
                     newDexFile);
-            localFileOutputStream.write(newdex);
+            localFileOutputStream.write(newDex);
             localFileOutputStream.flush();
             localFileOutputStream.close();
 
@@ -138,13 +136,9 @@ public class AndShell {
      */
 
     private static byte[] encrpt(byte[] srcdata) {
-
-
-        // 模似加密数据
         for (int i = 0; i < srcdata.length; i++) {
             srcdata[i] = (byte) (srcdata[i] ^ 3);
         }
-
         return srcdata;
     }
 
@@ -223,7 +217,6 @@ public class AndShell {
 
         }
         System.arraycopy(refs, 0, dexBytes, 32, 4);// 修改（32-35）
-        System.out.println();
     }
 
     /**
