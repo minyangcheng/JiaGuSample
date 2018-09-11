@@ -40,10 +40,10 @@ public class ProxyApplication extends Application {
             File libs = this.getDir("payload_lib", MODE_PRIVATE);
             odexPath = odex.getAbsolutePath();
             libPath = libs.getAbsolutePath();
-            apkFileName = odex.getAbsolutePath() + "/AndroidShellDome.apk";
+            apkFileName = odex.getAbsolutePath() + "/source.apk";
 
             //用本地apk测试解壳过程
-//            copyAssetsToDst(this, "source-apk-debug.apk", apkFileName);
+//            copyAssetsToDst(this, "source.apk", apkFileName);
 
             File dexFile = new File(apkFileName);
             if (!dexFile.exists()) {
@@ -85,9 +85,9 @@ public class ProxyApplication extends Application {
     @SuppressLint("MissingSuperCall")
     @Override
     public void onCreate() {
-        // 如果源应用配置有Appliction对象，则替换为源应用Applicaiton，以便不影响源程序逻辑。
+        // 填写源应用的application全量类路径
         String appClassName = "com.min.source.App";
-        // 有值的话调用该Applicaiton
+
         Object currentActivityThread = RefInvoke.invokeStaticMethod(
                 "android.app.ActivityThread", "currentActivityThread",
                 new Class[]{}, new Object[]{});
@@ -97,18 +97,15 @@ public class ProxyApplication extends Application {
         Object loadedApkInfo = RefInvoke.getFieldOjbect(
                 "android.app.ActivityThread$AppBindData",
                 mBoundApplication, "info");
-        // 把当前进程的mApplication 设置成了null
         RefInvoke.setFieldOjbect("android.app.LoadedApk", "mApplication",
                 loadedApkInfo, null);
         Object oldApplication = RefInvoke.getFieldOjbect(
                 "android.app.ActivityThread", currentActivityThread,
                 "mInitialApplication");
-        // http://www.codeceo.com/article/android-context.html
         ArrayList<Application> mAllApplications = (ArrayList<Application>) RefInvoke
                 .getFieldOjbect("android.app.ActivityThread",
                         currentActivityThread, "mAllApplications");
-        mAllApplications.remove(oldApplication);// 删除oldApplication
-
+        mAllApplications.remove(oldApplication);
         ApplicationInfo appinfo_In_LoadedApk = (ApplicationInfo) RefInvoke
                 .getFieldOjbect("android.app.LoadedApk", loadedApkInfo,
                         "mApplicationInfo");
@@ -121,10 +118,8 @@ public class ProxyApplication extends Application {
                 "android.app.LoadedApk", "makeApplication", loadedApkInfo,
                 new Class[]{boolean.class, Instrumentation.class},
                 new Object[]{false, null});// 执行
-        // makeApplication（false,null）
         RefInvoke.setFieldOjbect("android.app.ActivityThread",
                 "mInitialApplication", currentActivityThread, app);
-
         Iterator it;
         if (Build.VERSION.SDK_INT < 19) {
             // 解决了类型强转错误的问题，原因：
@@ -152,61 +147,26 @@ public class ProxyApplication extends Application {
     }
 
     private void splitPayLoadFromDex(byte[] data) throws IOException {
-        byte[] apkdata = data;
-        int ablen = apkdata.length;
-        // 取被加壳apk的长度 这里的长度取值，对应加壳时长度的赋值都可以做些简化
-        byte[] dexlen = new byte[4];
-        System.arraycopy(apkdata, ablen - 4, dexlen, 0, 4);
-        ByteArrayInputStream bais = new ByteArrayInputStream(dexlen);
+        byte[] apkData = data;
+        int abLen = apkData.length;
+        byte[] dexLen = new byte[4];
+        System.arraycopy(apkData, abLen - 4, dexLen, 0, 4);
+        ByteArrayInputStream bais = new ByteArrayInputStream(dexLen);
         DataInputStream in = new DataInputStream(bais);
         int readInt = in.readInt();
         System.out.println(Integer.toHexString(readInt));
-        byte[] newdex = new byte[readInt];
-        // 把被加壳apk内容拷贝到newdex中
-        System.arraycopy(apkdata, ablen - 4 - readInt, newdex, 0, readInt);
-        // 这里应该加上对于apk的解密操作，若加壳是加密处理的话
-        newdex = decrypt(newdex);
-        // 写入apk文件
+        byte[] newDex = new byte[readInt];
+        System.arraycopy(apkData, abLen - 4 - readInt, newDex, 0, readInt);
+        newDex = decrypt(newDex);
         File file = new File(apkFileName);
         try {
             FileOutputStream localFileOutputStream = new FileOutputStream(file);
-            localFileOutputStream.write(newdex);
+            localFileOutputStream.write(newDex);
             localFileOutputStream.close();
 
         } catch (IOException localIOException) {
             throw new RuntimeException(localIOException);
         }
-
-        // 分析被加壳的apk文件
-        ZipInputStream localZipInputStream = new ZipInputStream(
-                new BufferedInputStream(new FileInputStream(file)));
-        while (true) {
-            ZipEntry localZipEntry = localZipInputStream.getNextEntry();// 不了解这个是否也遍历子目录，看样子应该是遍历的
-            if (localZipEntry == null) {
-                localZipInputStream.close();
-                break;
-            }
-            // 取出被加壳apk用到的so文件，放到 libPath中（data/data/包名/payload_lib)
-            String name = localZipEntry.getName();
-            if (name.startsWith("lib/") && name.endsWith(".so")) {
-                File storeFile = new File(libPath + "/"
-                        + name.substring(name.lastIndexOf('/')));
-                storeFile.createNewFile();
-                FileOutputStream fos = new FileOutputStream(storeFile);
-                byte[] arrayOfByte = new byte[1024];
-                while (true) {
-                    int i = localZipInputStream.read(arrayOfByte);
-                    if (i == -1)
-                        break;
-                    fos.write(arrayOfByte, 0, i);
-                }
-                fos.flush();
-                fos.close();
-            }
-            localZipInputStream.closeEntry();
-        }
-        localZipInputStream.close();
-
     }
 
     private byte[] readDexFileFromApk() throws IOException {
