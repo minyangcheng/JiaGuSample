@@ -1,13 +1,11 @@
 package com.min.tool;
 
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.Adler32;
@@ -15,26 +13,13 @@ import java.util.zip.Adler32;
 public class JiaGu {
 
     private static final String dir = "/home/minych/project/android/JiaGuSample/tool/src/main/apks/";
-    /**
-     * 需要加壳的程序
-     */
-    private static String apkPath = dir + "source-apk-debug.apk";
-    /**
-     * 壳dex
-     */
+    private static String sourceApkPath = dir + "source.apk";
     private static String shellDexPath = dir + "shell.dex";
-    /**
-     * 加壳后的dex
-     */
     private static String newDexFile = dir + "classes.dex";
 
     public static void main(String[] args) {
-
-        // 检查输入的参数是否正确
-        //checkArgs(args);
-
         try {
-            File apkFile = new File(apkPath);
+            File apkFile = new File(sourceApkPath);
             File shellDexFile = new File(shellDexPath);
             if (!apkFile.exists()) {
                 System.out.println("APK不存在");
@@ -45,24 +30,19 @@ public class JiaGu {
                 return;
             }
 
-            byte[] apkByteArray = encrpt(readFileBytes(apkFile));
-            System.out.println("APK的长度：" + apkByteArray.length);
-
+            byte[] apkByteArray = encrypt(readFileBytes(apkFile));
             byte[] shellDexArray = readFileBytes(shellDexFile);
-            System.out.println("Dex的长度：" + shellDexArray.length);
-
             int apkByteArrayLen = apkByteArray.length;
             int shellDexLen = shellDexArray.length;
             int totalLen = apkByteArrayLen + shellDexLen + 4;
             byte[] newDex = new byte[totalLen];
-            System.out.println("加壳后Dex的长度" + newDex.length);
 
-            // 添加解壳代码
-            System.arraycopy(shellDexArray, 0, newDex, 0, shellDexLen);// 先拷贝dex内容
-            // 添加加密后的解壳数据
-            System.arraycopy(apkByteArray, 0, newDex, shellDexLen, apkByteArrayLen);// 再在dex内容后面拷贝apk的内容
-            // 添加解壳数据长度
-            System.arraycopy(intToByte(apkByteArrayLen), 0, newDex, totalLen - 4, 4);// 最后4为长度
+            // 添加壳应用数据
+            System.arraycopy(shellDexArray, 0, newDex, 0, shellDexLen);
+            // 添加源应用数据
+            System.arraycopy(apkByteArray, 0, newDex, shellDexLen, apkByteArrayLen);
+            // 添加源应用数据长度
+            System.arraycopy(intToByte(apkByteArrayLen), 0, newDex, totalLen - 4, 4);
             // 修改DEX file size文件头
             fixFileSizeHeader(newDex);
             // 修改DEX SHA1 文件头
@@ -75,67 +55,16 @@ public class JiaGu {
                 file.createNewFile();
             }
 
-            FileOutputStream localFileOutputStream = new FileOutputStream(
-                    newDexFile);
+            FileOutputStream localFileOutputStream = new FileOutputStream(newDexFile);
             localFileOutputStream.write(newDex);
             localFileOutputStream.flush();
             localFileOutputStream.close();
-
         } catch (Exception e) {
-
             e.printStackTrace();
         }
     }
 
-    /**
-     * 检测输入的参数
-     *
-     * @param args
-     */
-    private static void checkArgs(String[] args) {
-        if (args.length != 3) {
-            System.out.println("请输入要APK的路径：比如  D:/AndroidShellDome.apk");
-
-            BufferedReader strin = new BufferedReader(new InputStreamReader(
-                    System.in));
-            try {
-                apkPath = strin.readLine();
-                System.out.println("APK目录：" + apkPath);
-                System.out.println("请输入壳的dex录径：比如 D:/unshell.dex");
-                strin = new BufferedReader(new InputStreamReader(System.in));
-                shellDexPath = strin.readLine();
-                System.out.println("壳的dex的录径：" + shellDexPath);
-
-                System.out.println("请输入加壳后的dex路径及文件名:比如 D:/classes.dex");
-
-                strin = new BufferedReader(new InputStreamReader(System.in));
-                newDexFile = strin.readLine();
-                System.out.println("加壳后的dex路径及文件名:" + newDexFile);
-
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-
-        } else {
-            apkPath = args[0];
-            System.out.println("APK录径：" + args[0]);
-
-            shellDexPath = args[1];
-            System.out.println("dex录径：" + args[1]);
-            newDexFile = args[2];
-            System.out.println("生成的dex：" + args[2]);
-        }
-    }
-
-    /**
-     * 直接返回数据，读者可以添加自己加密方法
-     *
-     * @param srcdata
-     * @return
-     */
-
-    private static byte[] encrpt(byte[] srcdata) {
+    private static byte[] encrypt(byte[] srcdata) {
         for (int i = 0; i < srcdata.length; i++) {
             srcdata[i] = (byte) (srcdata[i] ^ 3);
         }
@@ -161,7 +90,6 @@ public class JiaGu {
         }
         System.arraycopy(recs, 0, dexBytes, 8, 4);// 效验码赋值（8-11）
         System.out.println("较验码字节码数组长度：" + newcs.length);
-        System.out.println();
     }
 
     /**

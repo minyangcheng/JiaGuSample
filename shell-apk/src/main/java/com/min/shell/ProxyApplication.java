@@ -122,9 +122,6 @@ public class ProxyApplication extends Application {
                 "mInitialApplication", currentActivityThread, app);
         Iterator it;
         if (Build.VERSION.SDK_INT < 19) {
-            // 解决了类型强转错误的问题，原因：
-            // 4.4以下系统 mProviderMap 的类型是 HashMap
-            // 4.4以上系统 mProviderMap 的类型是 ArrayMap
             HashMap mProviderMap = (HashMap) RefInvoke.getFieldOjbect(
                     "android.app.ActivityThread", currentActivityThread,
                     "mProviderMap");
@@ -196,7 +193,6 @@ public class ProxyApplication extends Application {
     }
 
     private byte[] decrypt(byte[] data) {
-        // 模似解密数据
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) (data[i] ^ 3);
         }
@@ -210,9 +206,9 @@ public class ProxyApplication extends Application {
                 File file = new File(dstPath);
                 if (!file.exists()) file.mkdirs();
                 for (String fileName : fileNames) {
-                    if (!srcPath.equals("")) { // assets 文件夹下的目录
+                    if (!srcPath.equals("")) {
                         copyAssetsToDst(context, srcPath + File.separator + fileName, dstPath + File.separator + fileName);
-                    } else { // assets 文件夹
+                    } else {
                         copyAssetsToDst(context, fileName, dstPath + File.separator + fileName);
                     }
                 }
