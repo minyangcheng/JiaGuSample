@@ -5,7 +5,7 @@ import android.util.Log;
 
 public class L {
 
-    private static final String TAG = "ShellDemo";
+    private static final String TAG = "SourceApk";
     private static final String LOG_FORMAT = "%1$s\n%2$s";
     private static volatile boolean writeLogs = true;
 

@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         displaySelectedApplication();
-        mClassEt = findViewById(R.id.et_class);
+        mClassEt = (EditText) findViewById(R.id.et_class);
         mClassEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
